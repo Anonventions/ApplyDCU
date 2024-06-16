@@ -253,3 +253,4 @@ public class ApplyCommand implements CommandExecutor {
         PaginatedGUI.showGUI(player, items, 0);
     }
 }
+//Need to fucking fix.

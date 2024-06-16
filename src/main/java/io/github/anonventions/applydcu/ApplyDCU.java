@@ -112,3 +112,6 @@ public final class ApplyDCU extends JavaPlugin {
         }
     }
 }
+
+
+//Need to fucking fix.

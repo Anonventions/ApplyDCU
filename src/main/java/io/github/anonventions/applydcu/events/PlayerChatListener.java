@@ -63,3 +63,4 @@ public class PlayerChatListener implements Listener {
         plugin.getPlayerAnswers().remove(player.getUniqueId());
     }
 }
+//Need to fucking fix.
