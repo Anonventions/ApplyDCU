@@ -1,5 +1,5 @@
 name: ApplyDCU
-version: 1.0
+version: 2.0
 main: io.github.anonventions.applydcu.ApplyDCU
 api-version: 1.20
 commands:
