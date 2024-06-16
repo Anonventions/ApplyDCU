@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +38,9 @@ public class PlayerChatListener implements Listener {
             plugin.getPlayerAnswers().put(playerId, answers);
             plugin.getPlayerQuestionIndex().put(playerId, questionIndex + 1);
 
-            plugin.getApplicationsConfig().set("applications." + playerId + ".answers", answers);
-            plugin.saveApplicationsConfig();
+            FileConfiguration applicationConfig = plugin.loadApplication(playerId);
+            applicationConfig.set("answers", answers);
+            plugin.saveApplication(playerId, applicationConfig);
 
             askNextQuestion(player);
         }
@@ -47,7 +49,8 @@ public class PlayerChatListener implements Listener {
     private void askNextQuestion(Player player) {
         UUID playerId = player.getUniqueId();
         int questionIndex = plugin.getPlayerQuestionIndex().get(playerId);
-        List<String> questions = plugin.getApplicationsConfig().getStringList("applications." + playerId + ".questions");
+        FileConfiguration applicationConfig = plugin.loadApplication(playerId);
+        List<String> questions = applicationConfig.getStringList("questions");
 
         if (questionIndex < questions.size()) {
             player.sendMessage(ChatColor.YELLOW + questions.get(questionIndex));
@@ -57,10 +60,9 @@ public class PlayerChatListener implements Listener {
     }
 
     private void completeApplication(Player player) {
-        String role = plugin.getApplicationsConfig().getString("applications." + player.getUniqueId() + ".role");
+        String role = plugin.loadApplication(player.getUniqueId()).getString("role");
         player.sendMessage(ChatColor.GREEN + "Thank you for applying for " + role + ". Your application has been submitted.");
         plugin.getPlayerQuestionIndex().remove(player.getUniqueId());
         plugin.getPlayerAnswers().remove(player.getUniqueId());
     }
 }
-//Need to fucking fix.

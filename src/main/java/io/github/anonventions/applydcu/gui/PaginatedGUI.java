@@ -4,12 +4,17 @@ import io.github.anonventions.applydcu.ApplyDCU;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,31 +53,35 @@ public class PaginatedGUI {
     }
 
     public static void refreshGUI(Player player, ApplyDCU plugin, String playerId) {
-        List<ItemStack> items = plugin.getApplicationsConfig().getConfigurationSection("applications").getKeys(false).stream()
-                .filter(key -> !key.equals(playerId)) // Exclude the processed application
-                .map(key -> {
-                    String role = plugin.getApplicationsConfig().getString("applications." + key + ".role");
-                    List<String> questions = plugin.getApplicationsConfig().getStringList("applications." + key + ".questions");
-                    List<String> answers = plugin.getApplicationsConfig().getStringList("applications." + key + ".answers");
+        File applicationsFolder = new File(plugin.getDataFolder(), "applications");
+        File[] applicationFiles = applicationsFolder.listFiles();
+        List<ItemStack> items = new ArrayList<>();
+        if (applicationFiles != null) {
+            items = Arrays.asList(applicationFiles).stream()
+                    .filter(file -> !file.getName().replace(".yml", "").equals(playerId)) // Exclude the processed application
+                    .map(file -> {
+                        FileConfiguration applicationConfig = YamlConfiguration.loadConfiguration(file);
+                        String role = applicationConfig.getString("role");
+                        List<String> questions = applicationConfig.getStringList("questions");
+                        List<String> answers = applicationConfig.getStringList("answers");
 
-                    ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD, 1);
-                    SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
-                    meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(key)));
-                    meta.setDisplayName(meta.getOwningPlayer().getName());
+                        ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD, 1);
+                        SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
+                        meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(file.getName().replace(".yml", ""))));
+                        meta.setDisplayName(meta.getOwningPlayer().getName());
 
-                    List<String> lore = questions.stream()
-                            .map(question -> ChatColor.YELLOW + question + ": " + ChatColor.WHITE + (answers.size() > questions.indexOf(question) ? answers.get(questions.indexOf(question)) : ""))
-                            .collect(Collectors.toList());
-                    lore.add(0, ChatColor.GOLD + "Role: " + ChatColor.WHITE + role);
+                        List<String> lore = questions.stream()
+                                .map(question -> ChatColor.YELLOW + question + ": " + ChatColor.WHITE + (answers.size() > questions.indexOf(question) ? answers.get(questions.indexOf(question)) : ""))
+                                .collect(Collectors.toList());
+                        lore.add(0, ChatColor.GOLD + "Role: " + ChatColor.WHITE + role);
 
-                    meta.setLore(lore);
-                    playerHead.setItemMeta(meta);
+                        meta.setLore(lore);
+                        playerHead.setItemMeta(meta);
 
-                    return playerHead;
-                })
-                .collect(Collectors.toList());
-
+                        return playerHead;
+                    })
+                    .collect(Collectors.toList());
+        }
         showGUI(player, items, 0); // Reset to the first page
     }
 }
-//Need to fucking fix.

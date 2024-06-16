@@ -11,8 +11,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +27,6 @@ import java.util.UUID;
 
 public final class ApplyDCU extends JavaPlugin {
     private FileConfiguration config;
-    private FileConfiguration applicationsConfig;
     private Map<UUID, Integer> playerQuestionIndex;
     private Map<UUID, List<String>> playerAnswers;
 
@@ -29,21 +34,18 @@ public final class ApplyDCU extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         config = getConfig();
-        loadApplicationsConfig();
+        createApplicationsFolder();
 
         playerQuestionIndex = new HashMap<>();
         playerAnswers = new HashMap<>();
 
-        // Register commands
         ApplyCommand applyCommand = new ApplyCommand(this);
         this.getCommand("apply").setExecutor(applyCommand);
         this.getCommand("apply").setTabCompleter(new ApplyTabCompleter(this));
 
-        // Register events
         Bukkit.getPluginManager().registerEvents(new InventoryClickListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this), this);
 
-        // Schedule application check task
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -54,31 +56,87 @@ public final class ApplyDCU extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        saveApplicationsConfig();
     }
 
-    public FileConfiguration getApplicationsConfig() {
-        return applicationsConfig;
-    }
-
-    public void loadApplicationsConfig() {
-        File applicationsFile = new File(getDataFolder(), "applications.yml");
-        if (!applicationsFile.exists()) {
-            try {
-                applicationsFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    private void createApplicationsFolder() {
+        File applicationsFolder = new File(getDataFolder(), "applications");
+        if (!applicationsFolder.exists()) {
+            applicationsFolder.mkdirs();
         }
-        applicationsConfig = YamlConfiguration.loadConfiguration(applicationsFile);
     }
 
-    public void saveApplicationsConfig() {
+    public File getApplicationFile(UUID playerId) {
+        return new File(getDataFolder() + "/applications", playerId.toString() + ".yml");
+    }
+
+    public File getPlayerStatusFile(UUID playerId) {
+        return new File(getDataFolder() + "/applications", playerId.toString() + ".json");
+    }
+
+    public FileConfiguration loadApplication(UUID playerId) {
+        File file = getApplicationFile(playerId);
+        if (file.exists()) {
+            return YamlConfiguration.loadConfiguration(file);
+        } else {
+            return null;
+        }
+    }
+
+    public void saveApplication(UUID playerId, FileConfiguration applicationConfig) {
         try {
-            applicationsConfig.save(new File(getDataFolder(), "applications.yml"));
+            applicationConfig.save(getApplicationFile(playerId));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void deleteApplication(UUID playerId) {
+        File file = getApplicationFile(playerId);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    public void savePlayerStatus(UUID playerId, String role, String status) {
+        File statusFile = getPlayerStatusFile(playerId);
+        JSONArray applications = new JSONArray();
+
+        if (statusFile.exists()) {
+            JSONParser parser = new JSONParser();
+            try (FileReader reader = new FileReader(statusFile)) {
+                Object obj = parser.parse(reader);
+                applications = (JSONArray) obj;
+            } catch (IOException | ParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        JSONObject applicationDetails = new JSONObject();
+        applicationDetails.put("role", role);
+        applicationDetails.put("status", status);
+        applicationDetails.put("timestamp", System.currentTimeMillis());
+
+        applications.add(applicationDetails);
+
+        try (FileWriter writer = new FileWriter(statusFile)) {
+            writer.write(applications.toJSONString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public JSONArray loadPlayerStatus(UUID playerId) {
+        File statusFile = getPlayerStatusFile(playerId);
+        if (statusFile.exists()) {
+            JSONParser parser = new JSONParser();
+            try (FileReader reader = new FileReader(statusFile)) {
+                Object obj = parser.parse(reader);
+                return (JSONArray) obj;
+            } catch (IOException | ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        return new JSONArray();
     }
 
     public FileConfiguration getCustomConfig() {
@@ -95,23 +153,19 @@ public final class ApplyDCU extends JavaPlugin {
 
     private void checkExpiredApplications() {
         long currentTime = System.currentTimeMillis();
-        if (applicationsConfig.contains("applications")) {
-            for (String key : applicationsConfig.getConfigurationSection("applications").getKeys(false)) {
-                long submissionTime = applicationsConfig.getLong("applications." + key + ".submissionTime");
+        File applicationsFolder = new File(getDataFolder(), "applications");
+        File[] applicationFiles = applicationsFolder.listFiles();
+        if (applicationFiles != null) {
+            for (File file : applicationFiles) {
+                FileConfiguration applicationConfig = YamlConfiguration.loadConfiguration(file);
+                long submissionTime = applicationConfig.getLong("submissionTime");
                 if (submissionTime > 0 && (currentTime - submissionTime) > (14 * 24 * 60 * 60 * 1000)) { // 14 days in milliseconds
-                    applicationsConfig.set("applications." + key + ".status", "denied");
-                    saveApplicationsConfig();
-
-                    UUID playerId = UUID.fromString(key);
-                    Player player = Bukkit.getPlayer(playerId);
-                    if (player != null && player.isOnline()) {
-                        player.sendMessage(ChatColor.RED + "Your application has been denied due to inactivity.");
-                    }
+                    UUID playerId = UUID.fromString(file.getName().replace(".yml", ""));
+                    String role = applicationConfig.getString("role");
+                    savePlayerStatus(playerId, role, "denied");
+                    deleteApplication(playerId);
                 }
             }
         }
     }
 }
-
-
-//Need to fucking fix.

@@ -14,11 +14,11 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 public class InventoryClickListener implements Listener {
@@ -98,17 +98,21 @@ public class InventoryClickListener implements Listener {
     }
 
     private void acceptApplication(Player player, String playerId) {
-        if (!plugin.getApplicationsConfig().contains("applications." + playerId)) {
+        UUID playerUUID = UUID.fromString(playerId);
+        FileConfiguration applicationConfig = plugin.loadApplication(playerUUID);
+        if (applicationConfig == null) {
             player.sendMessage(ChatColor.RED + "No application found for that player.");
             return;
         }
 
-        String role = plugin.getApplicationsConfig().getString("applications." + playerId + ".role");
-        plugin.getApplicationsConfig().set("applications." + playerId + ".status", "accepted");
-        plugin.saveApplicationsConfig();
-        player.sendMessage(ChatColor.GREEN + "Accepted application for player: " + Bukkit.getOfflinePlayer(UUID.fromString(playerId)).getName() + " for role: " + role);
+        String role = applicationConfig.getString("role");
+        applicationConfig.set("status", "accepted");
+        plugin.saveApplication(playerUUID, applicationConfig);
+        plugin.deleteApplication(playerUUID);
+        plugin.savePlayerStatus(playerUUID, role, "accepted");
+        player.sendMessage(ChatColor.GREEN + "Accepted application for player: " + Bukkit.getOfflinePlayer(playerUUID).getName() + " for role: " + role);
 
-        Player targetPlayer = Bukkit.getPlayer(UUID.fromString(playerId));
+        Player targetPlayer = Bukkit.getPlayer(playerUUID);
         if (targetPlayer != null && targetPlayer.isOnline()) {
             targetPlayer.sendMessage(ChatColor.GREEN + "Your application for " + role + " has been accepted.");
         }
@@ -118,17 +122,21 @@ public class InventoryClickListener implements Listener {
     }
 
     private void denyApplication(Player player, String playerId) {
-        if (!plugin.getApplicationsConfig().contains("applications." + playerId)) {
+        UUID playerUUID = UUID.fromString(playerId);
+        FileConfiguration applicationConfig = plugin.loadApplication(playerUUID);
+        if (applicationConfig == null) {
             player.sendMessage(ChatColor.RED + "No application found for that player.");
             return;
         }
 
-        String role = plugin.getApplicationsConfig().getString("applications." + playerId + ".role");
-        plugin.getApplicationsConfig().set("applications." + playerId + ".status", "denied");
-        plugin.saveApplicationsConfig();
-        player.sendMessage(ChatColor.RED + "Denied application for player: " + Bukkit.getOfflinePlayer(UUID.fromString(playerId)).getName() + " for role: " + role);
+        String role = applicationConfig.getString("role");
+        applicationConfig.set("status", "denied");
+        plugin.saveApplication(playerUUID, applicationConfig);
+        plugin.deleteApplication(playerUUID);
+        plugin.savePlayerStatus(playerUUID, role, "denied");
+        player.sendMessage(ChatColor.RED + "Denied application for player: " + Bukkit.getOfflinePlayer(playerUUID).getName() + " for role: " + role);
 
-        Player targetPlayer = Bukkit.getPlayer(UUID.fromString(playerId));
+        Player targetPlayer = Bukkit.getPlayer(playerUUID);
         if (targetPlayer != null && targetPlayer.isOnline()) {
             targetPlayer.sendMessage(ChatColor.RED + "Your application for " + role + " has been denied.");
         }
@@ -137,4 +145,3 @@ public class InventoryClickListener implements Listener {
         PaginatedGUI.refreshGUI(player, plugin, playerId);
     }
 }
-//Need to fucking fix.
