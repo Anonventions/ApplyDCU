@@ -1,0 +1,13 @@
+applications:
+  mod:
+    questions:
+      - "Why do you want to be a mod?"
+      - "How many hours can you commit weekly?"
+  builder:
+    questions:
+      - "What is your building experience?"
+      - "Can you provide screenshots of your builds?"
+  lore:
+    questions:
+      - "Why are you interested in lore?"
+      - "What is your favorite story in Minecraft?"

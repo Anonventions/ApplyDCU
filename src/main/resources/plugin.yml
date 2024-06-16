@@ -1,0 +1,15 @@
+name: ApplyDCU
+version: 1.0
+main: io.github.anonventions.applydcu.ApplyDCU
+api-version: 1.20
+commands:
+  apply:
+    description: Command to apply for roles or manage applications
+    usage: /apply <role|available|accept|deny>
+permissions:
+  apply.view:
+    description: Allows viewing of applications
+    default: op
+  apply.manage:
+    description: Allows managing (accept/deny) applications
+    default: op
