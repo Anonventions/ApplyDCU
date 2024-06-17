@@ -4,6 +4,10 @@ import io.github.anonventions.applydcu.commands.ApplyCommand;
 import io.github.anonventions.applydcu.commands.ApplyTabCompleter;
 import io.github.anonventions.applydcu.events.InventoryClickListener;
 import io.github.anonventions.applydcu.events.PlayerChatListener;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -57,6 +61,7 @@ public final class ApplyDCU extends JavaPlugin {
             @Override
             public void run() {
                 checkExpiredApplications();
+                checkInactivePlayers();  // Check for inactive players
             }
         }.runTaskTimer(this, 0, 20 * 60 * 60 * 24); // Run every 24 hours
     }
@@ -178,6 +183,48 @@ public final class ApplyDCU extends JavaPlugin {
                     savePlayerStatus(playerId, role, "denied");
                     deleteApplication(playerId);
                 }
+            }
+        }
+    }
+
+    private void checkInactivePlayers() {
+        long currentTime = System.currentTimeMillis();
+        File applicationsFolder = new File(getDataFolder(), "applications");
+        File[] applicationFiles = applicationsFolder.listFiles();
+        if (applicationFiles != null) {
+            for (File file : applicationFiles) {
+                UUID playerId = UUID.fromString(file.getName().replace(".yml", ""));
+                JSONArray playerStatus = loadPlayerStatus(playerId);
+                for (Object obj : playerStatus) {
+                    JSONObject application = (JSONObject) obj;
+                    String status = (String) application.get("status");
+                    long timestamp = (long) application.get("timestamp");
+
+                    if ("accepted".equals(status) && (currentTime - timestamp) > (18 * 24 * 60 * 60 * 1000)) { // 18 days in milliseconds
+                        String role = (String) application.get("role");
+                        removePlayerPermissions(playerId, role);
+                        application.put("status", "inactive");
+                    }
+                }
+
+                // Save the updated status
+                try (FileWriter writer = new FileWriter(getPlayerStatusFile(playerId))) {
+                    writer.write(playerStatus.toJSONString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void removePlayerPermissions(UUID playerId, String role) {
+        LuckPerms luckPerms = LuckPermsProvider.get();
+        User user = luckPerms.getUserManager().getUser(playerId);
+        if (user != null) {
+            String permission = config.getString("permissions." + role);
+            if (permission != null) {
+                user.data().remove(Node.builder(permission).build());
+                luckPerms.getUserManager().saveUser(user);
             }
         }
     }
