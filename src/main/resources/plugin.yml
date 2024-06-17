@@ -2,6 +2,7 @@ name: ApplyDCU
 version: 2.0
 main: io.github.anonventions.applydcu.ApplyDCU
 api-version: 1.20
+depend: [LuckPerms]
 commands:
   apply:
     description: Command to apply for roles or manage applications

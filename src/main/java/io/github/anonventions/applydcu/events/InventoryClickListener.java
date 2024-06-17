@@ -2,6 +2,10 @@ package io.github.anonventions.applydcu.events;
 
 import io.github.anonventions.applydcu.ApplyDCU;
 import io.github.anonventions.applydcu.gui.PaginatedGUI;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -12,7 +16,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -33,7 +36,7 @@ public class InventoryClickListener implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         FileConfiguration config = plugin.getConfig();
-        String applicationsTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.applications"));
+        @SuppressWarnings("deprecation") String applicationsTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.applications"));
         String manageTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.manage"));
         String availableTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.available"));
         String statusTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.status"));
@@ -126,6 +129,17 @@ public class InventoryClickListener implements Listener {
         plugin.deleteApplication(playerUUID);
         plugin.savePlayerStatus(playerUUID, role, "accepted");
         player.sendMessage(ChatColor.GREEN + "Accepted application for player: " + Bukkit.getOfflinePlayer(playerUUID).getName() + " for role: " + role);
+
+        // Grant permissions via LuckPerms
+        LuckPerms luckPerms = LuckPermsProvider.get();
+        User user = luckPerms.getUserManager().getUser(playerUUID);
+        if (user != null) {
+            String permission = plugin.getConfig().getString("permissions." + role);
+            if (permission != null) {
+                user.data().add(Node.builder(permission).build());
+                luckPerms.getUserManager().saveUser(user);
+            }
+        }
 
         Player targetPlayer = Bukkit.getPlayer(playerUUID);
         if (targetPlayer != null && targetPlayer.isOnline()) {
