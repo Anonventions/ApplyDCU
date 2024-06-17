@@ -153,6 +153,7 @@ public class ApplyCommand implements CommandExecutor {
         }
     }
 
+
     private void handleApplicationStart(CommandSender sender, String role) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "Only players can apply for roles.");
@@ -241,16 +242,40 @@ public class ApplyCommand implements CommandExecutor {
             String role = (String) application.get("role");
             String status = (String) application.get("status");
 
+            ChatColor statusColor;
+            String statusFormat;
+            switch (status.toLowerCase()) {
+                case "accepted":
+                    statusColor = ChatColor.GREEN;
+                    statusFormat = ChatColor.BOLD.toString();
+                    break;
+                case "denied":
+                    statusColor = ChatColor.RED;
+                    statusFormat = ChatColor.BOLD.toString();
+                    break;
+                case "in-progress..":
+                    statusColor = ChatColor.YELLOW;
+                    statusFormat = ChatColor.ITALIC.toString();
+                    break;
+                default:
+                    statusColor = ChatColor.WHITE;
+                    statusFormat = "";
+                    break;
+            }
+
             ItemStack paper = new ItemStack(Material.PAPER);
             ItemMeta meta = paper.getItemMeta();
-            meta.setDisplayName(ChatColor.GOLD + "Application for: " + ChatColor.WHITE + role);
-            meta.setLore(Arrays.asList(ChatColor.YELLOW + "Status: " + ChatColor.WHITE + status));
+            meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Application for: " + ChatColor.WHITE + ChatColor.BOLD + role);
+            meta.setLore(Arrays.asList(
+                    ChatColor.YELLOW + "" + ChatColor.ITALIC + "Status: " + statusColor + statusFormat + status
+            ));
             paper.setItemMeta(meta);
             items.add(paper);
         }
 
         PaginatedGUI.showGUI(player, items, 0);
     }
+
 
     private void showAvailableApplications(Player player) {
         List<ItemStack> items = new ArrayList<>();

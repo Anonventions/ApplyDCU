@@ -111,6 +111,12 @@ public final class ApplyDCU extends JavaPlugin {
             }
         }
 
+        // Remove any 'In-Progress' status for the same role
+        applications.removeIf(app -> {
+            JSONObject application = (JSONObject) app;
+            return application.get("role").equals(role) && application.get("status").equals("in progress");
+        });
+
         JSONObject applicationDetails = new JSONObject();
         applicationDetails.put("role", role);
         applicationDetails.put("status", status);
@@ -124,6 +130,7 @@ public final class ApplyDCU extends JavaPlugin {
             e.printStackTrace();
         }
     }
+
 
     public JSONArray loadPlayerStatus(UUID playerId) {
         File statusFile = getPlayerStatusFile(playerId);
