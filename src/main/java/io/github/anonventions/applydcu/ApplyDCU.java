@@ -5,10 +5,8 @@ import io.github.anonventions.applydcu.commands.ApplyTabCompleter;
 import io.github.anonventions.applydcu.events.InventoryClickListener;
 import io.github.anonventions.applydcu.events.PlayerChatListener;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.json.simple.JSONArray;
@@ -35,6 +33,15 @@ public final class ApplyDCU extends JavaPlugin {
         saveDefaultConfig();
         config = getConfig();
         createApplicationsFolder();
+
+        // Ensure default titles are set in config
+        if (!config.contains("gui.titles.applications")) {
+            config.set("gui.titles.applications", "Applications");
+        }
+        if (!config.contains("gui.titles.manage")) {
+            config.set("gui.titles.manage", "Manage Application");
+        }
+        saveConfig();
 
         playerQuestionIndex = new HashMap<>();
         playerAnswers = new HashMap<>();
@@ -130,7 +137,6 @@ public final class ApplyDCU extends JavaPlugin {
             e.printStackTrace();
         }
     }
-
 
     public JSONArray loadPlayerStatus(UUID playerId) {
         File statusFile = getPlayerStatusFile(playerId);

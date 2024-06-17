@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -31,7 +32,15 @@ public class InventoryClickListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getView().getTitle().startsWith("Applications - Page ")) {
+        FileConfiguration config = plugin.getConfig();
+        String applicationsTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.applications"));
+        String manageTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.manage"));
+        String availableTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.available"));
+        String statusTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.status"));
+
+        if (event.getView().getTitle().equals(applicationsTitle) ||
+                event.getView().getTitle().equals(availableTitle) ||
+                event.getView().getTitle().equals(statusTitle)) {
             event.setCancelled(true);
 
             ItemStack clickedItem = event.getCurrentItem();
@@ -44,44 +53,50 @@ public class InventoryClickListener implements Listener {
                 }
             } else if (clickedItem != null && clickedItem.getType() == Material.ARROW) {
                 Player player = (Player) event.getWhoClicked();
-                String title = event.getView().getTitle();
-                int currentPage = Integer.parseInt(title.split(" ")[3]) - 1;
                 List<ItemStack> items = Arrays.asList(event.getInventory().getContents());
                 items.removeIf(Objects::isNull);
 
                 if (clickedItem.getItemMeta().getDisplayName().equals(ChatColor.GREEN + "Next Page")) {
-                    PaginatedGUI.showGUI(player, items, currentPage + 1);
+                    PaginatedGUI.showGUI(player, items, getPageNumber(event.getView().getTitle()) + 1, event.getView().getTitle());
                 } else if (clickedItem.getItemMeta().getDisplayName().equals(ChatColor.GREEN + "Previous Page")) {
-                    PaginatedGUI.showGUI(player, items, currentPage - 1);
+                    PaginatedGUI.showGUI(player, items, getPageNumber(event.getView().getTitle()) - 1, event.getView().getTitle());
                 }
             }
-        } else if (event.getView().getTitle().equals("Manage Application")) {
+        } else if (event.getView().getTitle().equals(manageTitle)) {
             event.setCancelled(true);
 
             Player player = (Player) event.getWhoClicked();
             String playerId = ChatColor.stripColor(event.getInventory().getItem(13).getItemMeta().getDisplayName());
 
-            if (event.getCurrentItem().getType() == Material.GREEN_WOOL) {
-                acceptApplication(player, playerId);
-                player.closeInventory();
-            } else if (event.getCurrentItem().getType() == Material.RED_WOOL) {
-                denyApplication(player, playerId);
-                player.closeInventory();
+            if (event.getCurrentItem().getType() == Material.PAPER) {
+                ItemMeta meta = event.getCurrentItem().getItemMeta();
+                if (meta != null && meta.getDisplayName().contains("Accept")) {
+                    acceptApplication(player, playerId);
+                    player.closeInventory();
+                } else if (meta != null && meta.getDisplayName().contains("Deny")) {
+                    denyApplication(player, playerId);
+                    player.closeInventory();
+                }
             }
         }
     }
 
     private void openApplicationManagementGUI(Player player, String playerId) {
-        Inventory gui = Bukkit.createInventory(null, 27, "Manage Application");
+        FileConfiguration config = plugin.getConfig();
+        String manageTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.manage"));
 
-        ItemStack acceptButton = new ItemStack(Material.GREEN_WOOL, 1);
+        Inventory gui = Bukkit.createInventory(null, 27, manageTitle);
+
+        ItemStack acceptButton = new ItemStack(Material.PAPER, 1);
         ItemMeta acceptMeta = acceptButton.getItemMeta();
         acceptMeta.setDisplayName(ChatColor.GREEN + "Accept Application");
+        acceptMeta.setCustomModelData(config.getInt("custommodeldata.accept"));
         acceptButton.setItemMeta(acceptMeta);
 
-        ItemStack denyButton = new ItemStack(Material.RED_WOOL, 1);
+        ItemStack denyButton = new ItemStack(Material.PAPER, 1);
         ItemMeta denyMeta = denyButton.getItemMeta();
         denyMeta.setDisplayName(ChatColor.RED + "Deny Application");
+        denyMeta.setCustomModelData(config.getInt("custommodeldata.deny"));
         denyButton.setItemMeta(denyMeta);
 
         ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD, 1);
@@ -118,7 +133,7 @@ public class InventoryClickListener implements Listener {
         }
 
         // Refresh the GUI
-        PaginatedGUI.refreshGUI(player, plugin, playerId);
+        PaginatedGUI.refreshGUI(player, plugin, playerId, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
     }
 
     private void denyApplication(Player player, String playerId) {
@@ -142,6 +157,17 @@ public class InventoryClickListener implements Listener {
         }
 
         // Refresh the GUI
-        PaginatedGUI.refreshGUI(player, plugin, playerId);
+        PaginatedGUI.refreshGUI(player, plugin, playerId, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
+    }
+
+    private int getPageNumber(String title) {
+        String[] parts = title.split(" - Page ");
+        if (parts.length > 1) {
+            try {
+                return Integer.parseInt(parts[1]) - 1;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return 0;
     }
 }

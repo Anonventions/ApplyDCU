@@ -1,29 +1,38 @@
 applications:
   mod:
     questions:
-      - "In-game nickname? [Bot-Proof]"
-      - "How old are you?"
-      - "What is your timezone?"
-      - "What would you rate your plugin knowledge as?"
-      - "Why do you want to be a mod?"
-      - "How many hours can you commit weekly?"
+      - "&eIn-game nickname? &7[Bot-Proof]"
+      - "&eHow old are you?"
+      - "&eWhat is your timezone?"
+      - "&eWhat would you rate your plugin knowledge as?"
+      - "&eWhy do you want to be a mod?"
+      - "&eHow many hours can you commit weekly?"
   builder:
     questions:
-      - "In-game nickname? [Bot-Proof]"
-      - "What is your building experience?"
-      - "Are you familiar with WorldEdit and VoxelSniper?"
-      - "How many hours can you commit weekly?"
-      - "Have you been a builder previously in any other servers?"
-      - "Can you provide screenshots of your builds? [Send IMGUR links]"
+      - "&eIn-game nickname? &7[Bot-Proof]"
+      - "&eWhat is your building experience?"
+      - "&eAre you familiar with WorldEdit and VoxelSniper?"
+      - "&eHow many hours can you commit weekly?"
+      - "&eHave you been a builder previously in any other servers?"
+      - "&eCan you provide screenshots of your builds? &7[Send IMGUR links]"
   lore:
     questions:
-      - "In-game nickname? [Bot-Proof]"
-      - "Why are you interested in lore?"
-      - "What is your favorite comic-book in DC Comics?"
-      - "What would you rate your knowledge on DC Comics Characters as?"
-      - "Any specific Characters you're very familiar with?"
-      - "How well can you write for events?"
-      - "How active will you be?"
-      - "What is your timezone?"
+      - "&eIn-game nickname? &7[Bot-Proof]"
+      - "&eWhy are you interested in lore?"
+      - "&eWhat is your favorite comic-book in DC Comics?"
+      - "&eWhat would you rate your knowledge on DC Comics Characters as?"
+      - "&eAny specific Characters you're very familiar with?"
+      - "&eHow well can you write for events?"
+      - "&eHow active will you be?"
+      - "&eWhat is your timezone?"
 
-#need to add permission setup...
+gui:
+  titles:
+    applications: "&6&lApplications"
+    manage: "&c&lManage Application"
+    status: "&b&lApplication Status"
+    available: "&a&lAvailable Applications"
+
+custommodeldata:
+  accept: 1001
+  deny: 1002

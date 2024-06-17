@@ -9,11 +9,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -23,9 +23,10 @@ public class PaginatedGUI {
 
     private static final int PAGE_SIZE = 45;
 
-    public static void showGUI(Player player, List<ItemStack> items, int page) {
+    public static void showGUI(Player player, List<ItemStack> items, int page, String title) {
+        String guiTitle = ChatColor.translateAlternateColorCodes('&', title);
         int totalPages = (int) Math.ceil((double) items.size() / PAGE_SIZE);
-        Inventory gui = Bukkit.createInventory(null, 54, "Applications - Page " + (page + 1));
+        Inventory gui = Bukkit.createInventory(null, 54, guiTitle);
 
         int startIndex = page * PAGE_SIZE;
         int endIndex = Math.min(startIndex + PAGE_SIZE, items.size());
@@ -52,36 +53,34 @@ public class PaginatedGUI {
         player.openInventory(gui);
     }
 
-    public static void refreshGUI(Player player, ApplyDCU plugin, String playerId) {
+    public static void refreshGUI(Player player, ApplyDCU plugin, String playerId, String title) {
         File applicationsFolder = new File(plugin.getDataFolder(), "applications");
         File[] applicationFiles = applicationsFolder.listFiles();
-        List<ItemStack> items = new ArrayList<>();
-        if (applicationFiles != null) {
-            items = Arrays.asList(applicationFiles).stream()
-                    .filter(file -> !file.getName().replace(".yml", "").equals(playerId)) // Exclude the processed application
-                    .map(file -> {
-                        FileConfiguration applicationConfig = YamlConfiguration.loadConfiguration(file);
-                        String role = applicationConfig.getString("role");
-                        List<String> questions = applicationConfig.getStringList("questions");
-                        List<String> answers = applicationConfig.getStringList("answers");
+        List<ItemStack> items = Arrays.stream(applicationFiles)
+                .filter(file -> !file.getName().replace(".yml", "").equals(playerId)) // Exclude the processed application
+                .map(file -> {
+                    FileConfiguration applicationConfig = YamlConfiguration.loadConfiguration(file);
+                    String role = applicationConfig.getString("role");
+                    List<String> questions = applicationConfig.getStringList("questions");
+                    List<String> answers = applicationConfig.getStringList("answers");
 
-                        ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD, 1);
-                        SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
-                        meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(file.getName().replace(".yml", ""))));
-                        meta.setDisplayName(meta.getOwningPlayer().getName());
+                    ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD, 1);
+                    SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
+                    meta.setOwningPlayer(Bukkit.getOfflinePlayer(UUID.fromString(file.getName().replace(".yml", ""))));
+                    meta.setDisplayName(meta.getOwningPlayer().getName());
 
-                        List<String> lore = questions.stream()
-                                .map(question -> ChatColor.YELLOW + question + ": " + ChatColor.WHITE + (answers.size() > questions.indexOf(question) ? answers.get(questions.indexOf(question)) : ""))
-                                .collect(Collectors.toList());
-                        lore.add(0, ChatColor.GOLD + "Role: " + ChatColor.WHITE + role);
+                    List<String> lore = questions.stream()
+                            .map(question -> ChatColor.YELLOW + question + ": " + ChatColor.WHITE + (answers.size() > questions.indexOf(question) ? answers.get(questions.indexOf(question)) : ""))
+                            .collect(Collectors.toList());
+                    lore.add(0, ChatColor.GOLD + "Role: " + ChatColor.WHITE + role);
 
-                        meta.setLore(lore);
-                        playerHead.setItemMeta(meta);
+                    meta.setLore(lore);
+                    playerHead.setItemMeta(meta);
 
-                        return playerHead;
-                    })
-                    .collect(Collectors.toList());
-        }
-        showGUI(player, items, 0); // Reset to the first page
+                    return playerHead;
+                })
+                .collect(Collectors.toList());
+
+        showGUI(player, items, 0, title); // Reset to the first page
     }
 }

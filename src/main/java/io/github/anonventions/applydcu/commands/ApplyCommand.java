@@ -13,6 +13,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.json.simple.JSONArray;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ApplyCommand implements CommandExecutor {
 
@@ -153,7 +155,6 @@ public class ApplyCommand implements CommandExecutor {
         }
     }
 
-
     private void handleApplicationStart(CommandSender sender, String role) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "Only players can apply for roles.");
@@ -174,6 +175,7 @@ public class ApplyCommand implements CommandExecutor {
         }
 
         List<String> questions = plugin.getCustomConfig().getStringList("applications." + role + ".questions");
+        questions = questions.stream().map(q -> ChatColor.translateAlternateColorCodes('&', q)).collect(Collectors.toList());
         player.sendMessage(ChatColor.GOLD + "Applying for " + role + ". Please answer the following questions:");
 
         plugin.getPlayerQuestionIndex().put(playerId, 0);
@@ -244,38 +246,43 @@ public class ApplyCommand implements CommandExecutor {
 
             ChatColor statusColor;
             String statusFormat;
+            Material material;
             switch (status.toLowerCase()) {
                 case "accepted":
                     statusColor = ChatColor.GREEN;
                     statusFormat = ChatColor.BOLD.toString();
+                    material = Material.WRITTEN_BOOK;
                     break;
                 case "denied":
                     statusColor = ChatColor.RED;
                     statusFormat = ChatColor.BOLD.toString();
+                    material = Material.WRITTEN_BOOK;
                     break;
-                case "in-progress..":
+                case "in progress":
                     statusColor = ChatColor.YELLOW;
                     statusFormat = ChatColor.ITALIC.toString();
+                    material = Material.WRITABLE_BOOK;
                     break;
                 default:
                     statusColor = ChatColor.WHITE;
                     statusFormat = "";
+                    material = Material.PAPER;
                     break;
             }
 
-            ItemStack paper = new ItemStack(Material.PAPER);
-            ItemMeta meta = paper.getItemMeta();
+            ItemStack book = new ItemStack(material);
+            ItemMeta meta = book.getItemMeta();
             meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Application for: " + ChatColor.WHITE + ChatColor.BOLD + role);
             meta.setLore(Arrays.asList(
                     ChatColor.YELLOW + "" + ChatColor.ITALIC + "Status: " + statusColor + statusFormat + status
             ));
-            paper.setItemMeta(meta);
-            items.add(paper);
+            book.setItemMeta(meta);
+            items.add(book);
         }
 
-        PaginatedGUI.showGUI(player, items, 0);
+        String statusTitle = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.status"));
+        PaginatedGUI.showGUI(player, items, 0, statusTitle);
     }
-
 
     private void showAvailableApplications(Player player) {
         List<ItemStack> items = new ArrayList<>();
@@ -310,6 +317,7 @@ public class ApplyCommand implements CommandExecutor {
             }
         }
 
-        PaginatedGUI.showGUI(player, items, 0);
+        String availableTitle = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.available"));
+        PaginatedGUI.showGUI(player, items, 0, availableTitle);
     }
 }
