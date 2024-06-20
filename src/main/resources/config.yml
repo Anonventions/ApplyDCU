@@ -42,11 +42,18 @@ permissions:
 #------------------------------------------------------------------
 gui:
   titles:
-    applications: "&6&lApplications"
-    manage: "&c&lManage Application"
-    status: "&b&lApplication Status"
-    available: "&a&lAvailable Applications"
+    applications: '&6&lApplications'
+    manage: '&fƪƪƪƪƪƪƪƪ♜'
+    status: '&fƪƪƪƪƪƪƪƪ♚'
+    available: '&fƪƪƪƪƪƪƪƪ'
 
 custommodeldata:
-  accept: 1001
-  deny: 1002
+  accept: 26
+  deny: 26
+  previous_page: 26
+  next_page: 26
+
+materials:
+  accept_button: "SLIME_BALL"
+  deny_button: "SLIME_BALL"
+  arrow_button: "SLIME_BALL"

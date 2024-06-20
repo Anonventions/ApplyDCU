@@ -9,7 +9,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
@@ -24,6 +23,8 @@ public class PaginatedGUI {
     private static final int PAGE_SIZE = 45;
 
     public static void showGUI(Player player, List<ItemStack> items, int page, String title) {
+        FileConfiguration config = ApplyDCU.getInstance().getConfig();
+
         String guiTitle = ChatColor.translateAlternateColorCodes('&', title);
         int totalPages = (int) Math.ceil((double) items.size() / PAGE_SIZE);
         Inventory gui = Bukkit.createInventory(null, 54, guiTitle);
@@ -34,18 +35,22 @@ public class PaginatedGUI {
             gui.setItem(i - startIndex, items.get(i));
         }
 
+        Material arrowMaterial = Material.getMaterial(config.getString("materials.arrow_button"));
+
         if (page > 0) {
-            ItemStack prevButton = new ItemStack(Material.ARROW);
+            ItemStack prevButton = new ItemStack(arrowMaterial);
             ItemMeta prevMeta = prevButton.getItemMeta();
             prevMeta.setDisplayName(ChatColor.GREEN + "Previous Page");
+            prevMeta.setCustomModelData(config.getInt("custommodeldata.previous_page"));
             prevButton.setItemMeta(prevMeta);
             gui.setItem(45, prevButton);
         }
 
         if (page < totalPages - 1) {
-            ItemStack nextButton = new ItemStack(Material.ARROW);
+            ItemStack nextButton = new ItemStack(arrowMaterial);
             ItemMeta nextMeta = nextButton.getItemMeta();
             nextMeta.setDisplayName(ChatColor.GREEN + "Next Page");
+            nextMeta.setCustomModelData(config.getInt("custommodeldata.next_page"));
             nextButton.setItemMeta(nextMeta);
             gui.setItem(53, nextButton);
         }

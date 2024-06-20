@@ -9,6 +9,8 @@ import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -28,12 +30,18 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class ApplyDCU extends JavaPlugin {
+    private static ApplyDCU instance;
     private FileConfiguration config;
     private Map<UUID, Integer> playerQuestionIndex;
     private Map<UUID, List<String>> playerAnswers;
 
+    public static ApplyDCU getInstance() {
+        return instance;
+    }
+
     @Override
     public void onEnable() {
+        instance = this;
         saveDefaultConfig();
         config = getConfig();
         createApplicationsFolder();
@@ -68,6 +76,12 @@ public final class ApplyDCU extends JavaPlugin {
 
     @Override
     public void onDisable() {
+    }
+
+    public void reloadPlugin(CommandSender sender) {
+        reloadConfig();
+        config = getConfig();
+        sender.sendMessage(ChatColor.GREEN + "The plugin has been reloaded.");
     }
 
     private void createApplicationsFolder() {

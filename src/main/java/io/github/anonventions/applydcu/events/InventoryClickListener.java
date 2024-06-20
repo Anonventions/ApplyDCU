@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,7 +19,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +36,7 @@ public class InventoryClickListener implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         FileConfiguration config = plugin.getConfig();
-        @SuppressWarnings("deprecation") String applicationsTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.applications"));
+        String applicationsTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.applications"));
         String manageTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.manage"));
         String availableTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.available"));
         String statusTitle = ChatColor.translateAlternateColorCodes('&', config.getString("gui.titles.status"));
@@ -54,7 +54,7 @@ public class InventoryClickListener implements Listener {
                 if (offlinePlayer != null) {
                     openApplicationManagementGUI(player, offlinePlayer.getUniqueId().toString());
                 }
-            } else if (clickedItem != null && clickedItem.getType() == Material.ARROW) {
+            } else if (clickedItem != null && clickedItem.getType() == Material.getMaterial(config.getString("materials.arrow_button"))) {
                 Player player = (Player) event.getWhoClicked();
                 List<ItemStack> items = Arrays.asList(event.getInventory().getContents());
                 items.removeIf(Objects::isNull);
@@ -71,12 +71,21 @@ public class InventoryClickListener implements Listener {
             Player player = (Player) event.getWhoClicked();
             String playerId = ChatColor.stripColor(event.getInventory().getItem(13).getItemMeta().getDisplayName());
 
-            if (event.getCurrentItem().getType() == Material.PAPER) {
+            Material acceptMaterial = Material.getMaterial(config.getString("materials.accept_button"));
+            Material denyMaterial = Material.getMaterial(config.getString("materials.deny_button"));
+
+            if (event.getCurrentItem().getType() == acceptMaterial) {
                 ItemMeta meta = event.getCurrentItem().getItemMeta();
                 if (meta != null && meta.getDisplayName().contains("Accept")) {
                     acceptApplication(player, playerId);
                     player.closeInventory();
                 } else if (meta != null && meta.getDisplayName().contains("Deny")) {
+                    denyApplication(player, playerId);
+                    player.closeInventory();
+                }
+            } else if (event.getCurrentItem().getType() == denyMaterial) {
+                ItemMeta meta = event.getCurrentItem().getItemMeta();
+                if (meta != null && meta.getDisplayName().contains("Deny")) {
                     denyApplication(player, playerId);
                     player.closeInventory();
                 }
@@ -90,13 +99,16 @@ public class InventoryClickListener implements Listener {
 
         Inventory gui = Bukkit.createInventory(null, 27, manageTitle);
 
-        ItemStack acceptButton = new ItemStack(Material.PAPER, 1);
+        Material acceptMaterial = Material.getMaterial(config.getString("materials.accept_button"));
+        Material denyMaterial = Material.getMaterial(config.getString("materials.deny_button"));
+
+        ItemStack acceptButton = new ItemStack(acceptMaterial, 1);
         ItemMeta acceptMeta = acceptButton.getItemMeta();
         acceptMeta.setDisplayName(ChatColor.GREEN + "Accept Application");
         acceptMeta.setCustomModelData(config.getInt("custommodeldata.accept"));
         acceptButton.setItemMeta(acceptMeta);
 
-        ItemStack denyButton = new ItemStack(Material.PAPER, 1);
+        ItemStack denyButton = new ItemStack(denyMaterial, 1);
         ItemMeta denyMeta = denyButton.getItemMeta();
         denyMeta.setDisplayName(ChatColor.RED + "Deny Application");
         denyMeta.setCustomModelData(config.getInt("custommodeldata.deny"));

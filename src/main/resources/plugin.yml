@@ -6,7 +6,10 @@ depend: [LuckPerms]
 commands:
   apply:
     description: Command to apply for roles or manage applications
-    usage: /apply <role|available|accept|deny>
+    usage: /apply <role|available|accept|deny|reload>
+    aliases: []
+    permission: apply.use
+    permission-message: You do not have permission to use this command.
 permissions:
   apply.view:
     description: Allows viewing of applications
@@ -14,3 +17,6 @@ permissions:
   apply.manage:
     description: Allows managing (accept/deny) applications
     default: op
+  apply.use:
+    description: Allows usage of apply commands
+    default: true

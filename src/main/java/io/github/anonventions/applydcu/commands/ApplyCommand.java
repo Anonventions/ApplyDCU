@@ -45,56 +45,58 @@ public class ApplyCommand implements CommandExecutor {
                 return false;
             }
 
-            if (args[0].equalsIgnoreCase("available") && sender.hasPermission("apply.view")) {
-                if (sender instanceof Player) {
-                    showAvailableApplications((Player) sender);
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Only players can view applications.");
-                }
-                return true;
-            }
-
-            if (args[0].equalsIgnoreCase("accept") && sender.hasPermission("apply.manage")) {
-                if (args.length < 2) {
-                    sender.sendMessage(ChatColor.RED + "Please specify the application to accept.");
-                    return false;
-                }
-                acceptApplication(sender, args[1]);
-                return true;
-            }
-
-            if (args[0].equalsIgnoreCase("deny") && sender.hasPermission("apply.manage")) {
-                if (args.length < 2) {
-                    sender.sendMessage(ChatColor.RED + "Please specify the application to deny.");
-                    return false;
-                }
-                denyApplication(sender, args[1]);
-                return true;
-            }
-
-            if (args[0].equalsIgnoreCase("continue")) {
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage(ChatColor.RED + "Only players can continue applications.");
+            switch (args[0].toLowerCase()) {
+                case "available":
+                    if (sender.hasPermission("apply.view")) {
+                        if (sender instanceof Player) {
+                            showAvailableApplications((Player) sender);
+                        } else {
+                            sender.sendMessage(ChatColor.RED + "Only players can view applications.");
+                        }
+                    }
                     return true;
-                }
-                Player player = (Player) sender;
-                continueApplication(player);
-                return true;
-            }
-
-            if (args[0].equalsIgnoreCase("status")) {
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage(ChatColor.RED + "Only players can check their application status.");
+                case "accept":
+                    if (sender.hasPermission("apply.manage")) {
+                        if (args.length < 2) {
+                            sender.sendMessage(ChatColor.RED + "Please specify the application to accept.");
+                            return false;
+                        }
+                        acceptApplication(sender, args[1]);
+                    }
                     return true;
-                }
-                Player player = (Player) sender;
-                showApplicationStatus(player);
-                return true;
-            }
-
-            if (args.length == 1) {
-                handleApplicationStart(sender, args[0]);
-                return true;
+                case "deny":
+                    if (sender.hasPermission("apply.manage")) {
+                        if (args.length < 2) {
+                            sender.sendMessage(ChatColor.RED + "Please specify the application to deny.");
+                            return false;
+                        }
+                        denyApplication(sender, args[1]);
+                    }
+                    return true;
+                case "continue":
+                    if (sender instanceof Player) {
+                        continueApplication((Player) sender);
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Only players can continue applications.");
+                    }
+                    return true;
+                case "status":
+                    if (sender instanceof Player) {
+                        showApplicationStatus((Player) sender);
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Only players can check their application status.");
+                    }
+                    return true;
+                case "reload":
+                    if (sender.hasPermission("apply.manage")) {
+                        plugin.reloadPlugin(sender);
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to reload the plugin.");
+                    }
+                    return true;
+                default:
+                    handleApplicationStart(sender, args[0]);
+                    return true;
             }
         }
         return false;
@@ -292,6 +294,10 @@ public class ApplyCommand implements CommandExecutor {
 
         String statusTitle = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.status"));
         PaginatedGUI.showGUI(player, items, 0, statusTitle);
+    }
+    private void reloadPlugin(CommandSender sender) {
+        plugin.reloadConfig();
+        sender.sendMessage(ChatColor.GREEN + "The plugin has been reloaded.");
     }
 
     private void showAvailableApplications(Player player) {
