@@ -1,6 +1,8 @@
 package io.github.anonventions.applydcu.events;
 
 import io.github.anonventions.applydcu.ApplyDCU;
+import io.github.anonventions.applydcu.gui.PaginatedGUI;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -43,6 +45,29 @@ public class PlayerChatListener implements Listener {
             plugin.saveApplication(playerId, applicationConfig);
 
             askNextQuestion(player);
+        } else if (plugin.getPendingDenials().containsKey(playerId)) {
+            event.setCancelled(true); // Prevent message from being broadcasted
+
+            UUID applicationId = plugin.getPendingDenials().remove(playerId);
+            FileConfiguration applicationConfig = plugin.loadApplication(applicationId);
+            if (applicationConfig != null) {
+                String role = applicationConfig.getString("role");
+                applicationConfig.set("status", "denied");
+                applicationConfig.set("denialReason", event.getMessage());
+                applicationConfig.set("deniedBy", player.getName());
+                plugin.saveApplication(applicationId, applicationConfig);
+                plugin.savePlayerStatus(applicationId, role, "denied", event.getMessage(), player.getName());
+
+                player.sendMessage(ChatColor.RED + "Denied application for player: " + Bukkit.getOfflinePlayer(applicationId).getName() + " for role: " + role + " with reason: " + event.getMessage());
+
+                Player targetPlayer = Bukkit.getPlayer(applicationId);
+                if (targetPlayer != null && targetPlayer.isOnline()) {
+                    targetPlayer.sendMessage(ChatColor.RED + "Your application for " + role + " has been denied. Reason: " + event.getMessage());
+                }
+            } else {
+                player.sendMessage(ChatColor.RED + "No application found for that player.");
+            }
+            PaginatedGUI.refreshGUI(player, plugin, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
         }
     }
 

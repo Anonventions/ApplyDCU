@@ -137,6 +137,7 @@ public class InventoryClickListener implements Listener {
 
         String role = applicationConfig.getString("role");
         applicationConfig.set("status", "accepted");
+        applicationConfig.set("acceptedBy", player.getName());
         plugin.saveApplication(playerUUID, applicationConfig);
         plugin.deleteApplication(playerUUID);
         plugin.savePlayerStatus(playerUUID, role, "accepted");
@@ -159,7 +160,7 @@ public class InventoryClickListener implements Listener {
         }
 
         // Refresh the GUI
-        PaginatedGUI.refreshGUI(player, plugin, playerId, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
+        PaginatedGUI.refreshGUI(player, plugin, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
     }
 
     private void denyApplication(Player player, String playerId) {
@@ -170,20 +171,9 @@ public class InventoryClickListener implements Listener {
             return;
         }
 
-        String role = applicationConfig.getString("role");
-        applicationConfig.set("status", "denied");
-        plugin.saveApplication(playerUUID, applicationConfig);
-        plugin.deleteApplication(playerUUID);
-        plugin.savePlayerStatus(playerUUID, role, "denied");
-        player.sendMessage(ChatColor.RED + "Denied application for player: " + Bukkit.getOfflinePlayer(playerUUID).getName() + " for role: " + role);
-
-        Player targetPlayer = Bukkit.getPlayer(playerUUID);
-        if (targetPlayer != null && targetPlayer.isOnline()) {
-            targetPlayer.sendMessage(ChatColor.RED + "Your application for " + role + " has been denied.");
-        }
-
-        // Refresh the GUI
-        PaginatedGUI.refreshGUI(player, plugin, playerId, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
+        // Prompt the player to enter a reason in chat
+        player.sendMessage(ChatColor.YELLOW + "Please enter the reason for denying the application:");
+        plugin.getPendingDenials().put(player.getUniqueId(), playerUUID);
     }
 
     private int getPageNumber(String title) {

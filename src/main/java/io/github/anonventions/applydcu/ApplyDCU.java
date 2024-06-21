@@ -29,11 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public final class ApplyDCU extends JavaPlugin {
+public class ApplyDCU extends JavaPlugin {
     private static ApplyDCU instance;
     private FileConfiguration config;
     private Map<UUID, Integer> playerQuestionIndex;
     private Map<UUID, List<String>> playerAnswers;
+    private Map<UUID, UUID> pendingDenials; // New field
 
     public static ApplyDCU getInstance() {
         return instance;
@@ -57,6 +58,7 @@ public final class ApplyDCU extends JavaPlugin {
 
         playerQuestionIndex = new HashMap<>();
         playerAnswers = new HashMap<>();
+        pendingDenials = new HashMap<>(); // Initialize the map
 
         ApplyCommand applyCommand = new ApplyCommand(this);
         this.getCommand("apply").setExecutor(applyCommand);
@@ -124,6 +126,10 @@ public final class ApplyDCU extends JavaPlugin {
     }
 
     public void savePlayerStatus(UUID playerId, String role, String status) {
+        savePlayerStatus(playerId, role, status, "", "");
+    }
+
+    public void savePlayerStatus(UUID playerId, String role, String status, String denialReason, String deniedBy) {
         File statusFile = getPlayerStatusFile(playerId);
         JSONArray applications = new JSONArray();
 
@@ -147,6 +153,12 @@ public final class ApplyDCU extends JavaPlugin {
         applicationDetails.put("role", role);
         applicationDetails.put("status", status);
         applicationDetails.put("timestamp", System.currentTimeMillis());
+        if (!denialReason.isEmpty()) {
+            applicationDetails.put("denialReason", denialReason);
+        }
+        if (!deniedBy.isEmpty()) {
+            applicationDetails.put("deniedBy", deniedBy);
+        }
 
         applications.add(applicationDetails);
 
@@ -181,6 +193,10 @@ public final class ApplyDCU extends JavaPlugin {
 
     public Map<UUID, List<String>> getPlayerAnswers() {
         return playerAnswers;
+    }
+
+    public Map<UUID, UUID> getPendingDenials() {
+        return pendingDenials;
     }
 
     private void checkExpiredApplications() {

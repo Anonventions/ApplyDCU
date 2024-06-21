@@ -58,16 +58,18 @@ public class PaginatedGUI {
         player.openInventory(gui);
     }
 
-    public static void refreshGUI(Player player, ApplyDCU plugin, String playerId, String title) {
+    public static void refreshGUI(Player player, ApplyDCU plugin, String title) {
         File applicationsFolder = new File(plugin.getDataFolder(), "applications");
         File[] applicationFiles = applicationsFolder.listFiles();
         List<ItemStack> items = Arrays.stream(applicationFiles)
-                .filter(file -> !file.getName().replace(".yml", "").equals(playerId)) // Exclude the processed application
                 .map(file -> {
                     FileConfiguration applicationConfig = YamlConfiguration.loadConfiguration(file);
                     String role = applicationConfig.getString("role");
                     List<String> questions = applicationConfig.getStringList("questions");
                     List<String> answers = applicationConfig.getStringList("answers");
+                    String status = applicationConfig.getString("status");
+                    String denialReason = applicationConfig.getString("denialReason", "");
+                    String deniedBy = applicationConfig.getString("deniedBy", "");
 
                     ItemStack playerHead = new ItemStack(Material.PLAYER_HEAD, 1);
                     SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
@@ -78,6 +80,13 @@ public class PaginatedGUI {
                             .map(question -> ChatColor.YELLOW + question + ": " + ChatColor.WHITE + (answers.size() > questions.indexOf(question) ? answers.get(questions.indexOf(question)) : ""))
                             .collect(Collectors.toList());
                     lore.add(0, ChatColor.GOLD + "Role: " + ChatColor.WHITE + role);
+                    lore.add(ChatColor.RED + "Status: " + ChatColor.WHITE + status);
+                    if ("denied".equalsIgnoreCase(status)) {
+                        lore.add(ChatColor.RED + "Denied By: " + ChatColor.WHITE + deniedBy);
+                        lore.add(ChatColor.RED + "Reason: " + ChatColor.WHITE + denialReason);
+                    } else if ("accepted".equalsIgnoreCase(status)) {
+                        lore.add(ChatColor.GREEN + "Accepted By: " + ChatColor.WHITE + applicationConfig.getString("acceptedBy", "Unknown"));
+                    }
 
                     meta.setLore(lore);
                     playerHead.setItemMeta(meta);

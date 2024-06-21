@@ -70,7 +70,7 @@ public class ApplyCommand implements CommandExecutor {
                             sender.sendMessage(ChatColor.RED + "Please specify the application to deny.");
                             return false;
                         }
-                        denyApplication(sender, args[1]);
+                        denyApplication((Player) sender, args[1]);
                     }
                     return true;
                 case "continue":
@@ -118,6 +118,7 @@ public class ApplyCommand implements CommandExecutor {
 
         String role = applicationConfig.getString("role");
         applicationConfig.set("status", "accepted");
+        applicationConfig.set("acceptedBy", sender.getName());
         plugin.saveApplication(playerUUID, applicationConfig);
         plugin.deleteApplication(playerUUID);
         plugin.savePlayerStatus(playerUUID, role, "accepted");
@@ -138,33 +139,26 @@ public class ApplyCommand implements CommandExecutor {
         if (player != null && player.isOnline()) {
             player.sendMessage(ChatColor.GREEN + "Your application for " + role + " has been accepted.");
         }
+        PaginatedGUI.refreshGUI((Player) sender, plugin, ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.applications")));
     }
 
-    private void denyApplication(CommandSender sender, String playerId) {
+    private void denyApplication(Player player, String playerId) {
         UUID playerUUID;
         try {
             playerUUID = UUID.fromString(playerId);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(ChatColor.RED + "Invalid UUID format.");
+            player.sendMessage(ChatColor.RED + "Invalid UUID format.");
             return;
         }
         FileConfiguration applicationConfig = plugin.loadApplication(playerUUID);
         if (applicationConfig == null) {
-            sender.sendMessage(ChatColor.RED + "No application found for that player.");
+            player.sendMessage(ChatColor.RED + "No application found for that player.");
             return;
         }
 
-        String role = applicationConfig.getString("role");
-        applicationConfig.set("status", "denied");
-        plugin.saveApplication(playerUUID, applicationConfig);
-        plugin.deleteApplication(playerUUID);
-        plugin.savePlayerStatus(playerUUID, role, "denied");
-        sender.sendMessage(ChatColor.RED + "Denied application for player: " + Bukkit.getOfflinePlayer(playerUUID).getName() + " for role: " + role);
-
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player != null && player.isOnline()) {
-            player.sendMessage(ChatColor.RED + "Your application for " + role + " has been denied.");
-        }
+        // Prompt the player to enter a reason in chat
+        player.sendMessage(ChatColor.YELLOW + "Please enter the reason for denying the application:");
+        plugin.getPendingDenials().put(player.getUniqueId(), playerUUID);
     }
 
     private void handleApplicationStart(CommandSender sender, String role) {
@@ -255,6 +249,9 @@ public class ApplyCommand implements CommandExecutor {
             JSONObject application = (JSONObject) obj;
             String role = (String) application.get("role");
             String status = (String) application.get("status");
+            String denialReason = application.containsKey("denialReason") ? (String) application.get("denialReason") : "";
+            String deniedBy = application.containsKey("deniedBy") ? (String) application.get("deniedBy") : "";
+            String acceptedBy = application.containsKey("acceptedBy") ? (String) application.get("acceptedBy") : "";
 
             ChatColor statusColor;
             String statusFormat;
@@ -285,9 +282,16 @@ public class ApplyCommand implements CommandExecutor {
             ItemStack book = new ItemStack(material);
             ItemMeta meta = book.getItemMeta();
             meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Application for: " + ChatColor.WHITE + ChatColor.BOLD + role);
-            meta.setLore(Arrays.asList(
+            List<String> lore = new ArrayList<>(Arrays.asList(
                     ChatColor.YELLOW + "" + ChatColor.ITALIC + "Status: " + statusColor + statusFormat + status
             ));
+            if ("denied".equalsIgnoreCase(status)) {
+                lore.add(ChatColor.RED + "Denied By: " + ChatColor.WHITE + deniedBy);
+                lore.add(ChatColor.RED + "Reason: " + ChatColor.WHITE + denialReason);
+            } else if ("accepted".equalsIgnoreCase(status)) {
+                lore.add(ChatColor.GREEN + "Accepted By: " + ChatColor.WHITE + acceptedBy);
+            }
+            meta.setLore(lore);
             book.setItemMeta(meta);
             items.add(book);
         }
@@ -295,6 +299,7 @@ public class ApplyCommand implements CommandExecutor {
         String statusTitle = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("gui.titles.status"));
         PaginatedGUI.showGUI(player, items, 0, statusTitle);
     }
+
     private void reloadPlugin(CommandSender sender) {
         plugin.reloadConfig();
         sender.sendMessage(ChatColor.GREEN + "The plugin has been reloaded.");
