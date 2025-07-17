@@ -1,59 +1,273 @@
-#------------------------------------------------------------------
-# Application formats
-#------------------------------------------------------------------
-applications:
-  mod:
-    questions:
-      - "&eIn-game nickname? &7[Bot-Proof]"
-      - "&eHow old are you?"
-      - "&eWhat is your timezone?"
-      - "&eWhat would you rate your plugin knowledge as?"
-      - "&eWhy do you want to be a mod?"
-      - "&eHow many hours can you commit weekly?"
-  builder:
-    questions:
-      - "&eIn-game nickname? &7[Bot-Proof]"
-      - "&eWhat is your building experience?"
-      - "&eAre you familiar with WorldEdit and VoxelSniper?"
-      - "&eHow many hours can you commit weekly?"
-      - "&eHave you been a builder previously in any other servers?"
-      - "&eCan you provide screenshots of your builds? &7[Send IMGUR links]"
-  lore:
-    questions:
-      - "&eIn-game nickname? &7[Bot-Proof]"
-      - "&eWhy are you interested in lore?"
-      - "&eWhat is your favorite comic-book in DC Comics?"
-      - "&eWhat would you rate your knowledge on DC Comics Characters as?"
-      - "&eAny specific Characters you're very familiar with?"
-      - "&eHow well can you write for events?"
-      - "&eHow active will you be?"
-      - "&eWhat is your timezone?"
+#===============================================
+# cApplications Configuration File
+# Version: 2.0.0
+#===============================================
 
-#------------------------------------------------------------------
-# Permissions per group
-#------------------------------------------------------------------
-permissions:
-  mod: "group.mod"
-  builder: "group.builder"
-  lore: "group.lore"
+# Plugin Settings
+settings:
+  # Time before applications expire (in days)
+  expiry_days: 14
 
-#------------------------------------------------------------------
-# GUIs
-#------------------------------------------------------------------
+  # Time before accepted players become inactive (in days)
+  inactivity_days: 30
+
+  # Cooldown between applications for the same role (in hours)
+  cooldown_hours: 24
+
+  # Maximum applications per player at once
+  max_concurrent_applications: 1
+
+  # Enable debug mode
+  debug: false
+
+  # Auto-save interval for applications (in minutes)
+  auto_save_interval: 5
+
+  # Maximum question length
+  max_question_length: 500
+
+  # Maximum answer length
+  max_answer_length: 1000
+
+# GUI Configuration
 gui:
   titles:
-    applications: '&6&lApplications'
-    manage: '&fƪƪƪƪƪƪƪƪ♜'
-    status: '&fƪƪƪƪƪƪƪƪ♚'
-    available: '&fƪƪƪƪƪƪƪƪ'
+    applications: '&6&lApplications &7- Page {page}'
+    manage: '&f♜ &7Manage Application'
+    status: '&f♚ &7Your Applications'
+    available: '&f♛ &7Available Roles'
+    history: '&f♕ &7Application History'
 
-custommodeldata:
-  accept: 26
-  deny: 26
-  previous_page: 26
-  next_page: 26
+  items:
+    # Navigation items
+    next_page:
+      material: 'ARROW'
+      name: '&a&lNext Page'
+      lore:
+        - '&7Click to go to the next page'
 
-materials:
-  accept_button: "SLIME_BALL"
-  deny_button: "SLIME_BALL"
-  arrow_button: "SLIME_BALL"
+    previous_page:
+      material: 'ARROW'
+      name: '&c&lPrevious Page'
+      lore:
+        - '&7Click to go to the previous page'
+
+    # Action buttons
+    accept_button:
+      material: 'LIME_DYE'
+      name: '&a&lAccept Application'
+      lore:
+        - '&7Click to accept this application'
+        - '&7This will grant the player the role'
+
+    deny_button:
+      material: 'RED_DYE'
+      name: '&c&lDeny Application'
+      lore:
+        - '&7Click to deny this application'
+        - '&7You will be asked for a reason'
+
+    # Status items
+    status_pending:
+      material: 'YELLOW_STAINED_GLASS'
+      name: '&e&lPending Review'
+
+    status_accepted:
+      material: 'GREEN_STAINED_GLASS'
+      name: '&a&lAccepted'
+
+    status_denied:
+      material: 'RED_STAINED_GLASS'
+      name: '&c&lDenied'
+
+    status_expired:
+      material: 'GRAY_STAINED_GLASS'
+      name: '&8&lExpired'
+
+    status_in_progress:
+      material: 'LIGHT_BLUE_STAINED_GLASS'
+      name: '&b&lIn Progress'
+
+# Permission Configuration
+permissions:
+  moderator: 'group.moderator'
+  builder: 'group.builder'
+  developer: 'group.developer'
+  event_manager: 'group.events'
+
+# Messages Configuration
+messages:
+  # General messages
+  no_permission: '&cYou don''t have permission to use this command.'
+  player_only: '&cThis command can only be used by players.'
+  invalid_usage: '&cInvalid usage. Use &f{0} &cfor help.'
+  reload_success: '&acApplications configuration reloaded successfully!'
+  player_not_found: '&cPlayer not found.'
+  invalid_player: '&cInvalid player identifier.'
+
+  # Application messages
+  application:
+    started: '&aStarted application for &f{0}&a! Answer the questions truthfully.'
+    completed: '&aApplication submitted successfully! You will be notified of the decision.'
+    cancelled: '&eYour application for &f{0}&e has been cancelled.'
+    accepted: '&aYour application for &f{0}&a has been accepted by &f{1}&a!'
+    denied: '&cYour application for &f{0}&c has been denied by &f{1}&c. Reason: &f{2}'
+    expired: '&eYour application for &f{0}&e has expired after {1} days.'
+    cooldown: '&cYou must wait &f{0}&c before applying for &f{1}&c again.'
+    already_applied: '&cYou already have an active application. Use &f/app continue&c or &f/app cancel&c.'
+    not_found: '&cNo application found.'
+    requirements_not_met: '&cYou don''t meet the requirements for this role:'
+    continuing: '&aContinuing your application for &f{0}&a. Answer the remaining questions.'
+    no_active: '&cYou don''t have an active application to continue.'
+    no_history: '&eYou have no application history.'
+
+  # Admin messages
+  admin:
+    accepted_application: '&aAccepted application for &f{0}&a (&f{1}&a).'
+    denied_application: '&cDenied application for &f{0}&c (&f{1}&c). Reason: &f{2}'
+    no_applications: '&eNo applications found.'
+    purged_applications: '&aPurged &f{0}&a old application records.'
+    notification: '&b[cApplications] &f{0}&b submitted an application for &f{1}&b.'
+    exported_data: '&aExported application data to &f{0}&a.'
+    invalid_days: '&cInvalid number of days. Please enter a positive number.'
+
+  # Command help messages
+  help:
+    header: '&6&l=== cApplications Help ==='
+    apply: '&e/app <role> &7- Start an application for the specified role'
+    available: '&e/app available &7- View all available applications'
+    continue: '&e/app continue &7- Continue an in-progress application'
+    cancel: '&e/app cancel &7- Cancel your current application'
+    status: '&e/app status &7- View your application status'
+    history: '&e/app history [player] &7- View application history'
+    roles: '&e/app roles &7- View all available roles'
+    accept: '&e/app accept <player> &7- Accept a player''s application'
+    deny: '&e/app deny <player> &7- Deny a player''s application'
+    stats: '&e/app stats &7- View application statistics'
+    reload: '&e/app reload &7- Reload the plugin configuration'
+    purge: '&e/app purge <days> &7- Purge applications older than specified days'
+    export: '&e/app export [role] &7- Export application data'
+    cooldown: '&e/app cooldown <player> &7- Check a player''s application cooldowns'
+
+  # Error messages
+  error:
+    invalid_role: '&cInvalid role. Use &f/app roles&c to see available roles.'
+    invalid_player: '&cInvalid player identifier.'
+    file_error: '&cAn error occurred while processing your request.'
+    database_error: '&cDatabase error. Please contact an administrator.'
+    no_questions: '&cNo questions configured for role &f{0}&c.'
+    save_failed: '&cFailed to save application data.'
+    load_failed: '&cFailed to load application data.'
+    permission_grant_failed: '&cFailed to grant permissions for role.'
+
+# Custom Model Data (for resource packs)
+custom_model_data:
+  accept_button: 1001
+  deny_button: 1002
+  next_page: 1003
+  previous_page: 1004
+  status_pending: 1005
+  status_accepted: 1006
+  status_denied: 1007
+  status_expired: 1008
+  status_in_progress: 1009
+
+# Sound Configuration
+sounds:
+  application_submit: 'ENTITY_EXPERIENCE_ORB_PICKUP'
+  application_accept: 'ENTITY_PLAYER_LEVELUP'
+  application_deny: 'ENTITY_VILLAGER_NO'
+  button_click: 'UI_BUTTON_CLICK'
+  page_turn: 'ITEM_BOOK_PAGE_TURN'
+  question_advance: 'BLOCK_NOTE_BLOCK_PLING'
+
+# Webhook Configuration (for Discord notifications)
+webhooks:
+  enabled: false
+  url: ''
+  username: 'cApplications'
+  avatar_url: ''
+  notifications:
+    new_application: true
+    application_accepted: true
+    application_denied: true
+    application_expired: false
+
+# Logging Configuration
+logging:
+  # Log all application actions to file
+  log_to_file: true
+
+  # Log file name (will be created in plugins/cApplications/)
+  log_file: 'applications.log'
+
+  # Log level (INFO, WARNING, SEVERE)
+  log_level: 'INFO'
+
+  # Actions to log
+  log_actions:
+    - 'SUBMIT'
+    - 'ACCEPT'
+    - 'DENY'
+    - 'CANCEL'
+    - 'EXPIRE'
+
+# Database Configuration (for future MySQL support)
+database:
+  type: 'file'  # 'file' or 'mysql'
+  mysql:
+    host: 'localhost'
+    port: 3306
+    database: 'minecraft'
+    username: 'root'
+    password: 'password'
+    table_prefix: 'capplications_'
+
+# Backup Configuration
+backup:
+  # Enable automatic backups
+  enabled: true
+
+  # Backup interval (in hours)
+  interval: 24
+
+  # Keep backups for this many days
+  retention_days: 7
+
+  # Backup directory
+  directory: 'backups'
+
+# Integration Settings
+integrations:
+  # PlaceholderAPI placeholders
+  placeholderapi:
+    enabled: false
+
+  # Discord bot integration
+  discord:
+    enabled: false
+    bot_token: ''
+    channel_id: ''
+
+  # LuckPerms integration settings
+  luckperms:
+    enabled: true
+    auto_promote: true
+    remove_old_groups: false
+
+# Advanced Settings
+advanced:
+  # Use async operations where possible
+  async_operations: true
+
+  # Cache application data in memory
+  cache_applications: true
+
+  # Cache timeout (in minutes)
+  cache_timeout: 30
+
+  # Thread pool size for async operations
+  thread_pool_size: 4
+
+  # Maximum concurrent applications being processed
+  max_concurrent_processing: 10

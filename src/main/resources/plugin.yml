@@ -1,22 +1,64 @@
-name: ApplyDCU
+name: cApplications
 version: 2.0
-main: io.github.anonventions.applydcu.ApplyDCU
+main: io.github.anonventions.capplications.CApplications
 api-version: 1.20
 depend: [LuckPerms]
+softdepend: []
+author: Anonventions
+description: Comprehensive application system for Minecraft servers
+website: https://github.com/anonventions
+
 commands:
-  apply:
-    description: Command to apply for roles or manage applications
-    usage: /apply <role|available|accept|deny|reload>
-    aliases: []
-    permission: apply.use
-    permission-message: You do not have permission to use this command.
+  application:
+    description: Main application command
+    usage: /application <subcommand>
+    aliases: [app, apply]
+    permission: capplications.use
+    permission-message: §cYou don't have permission to use this command.
+
 permissions:
-  apply.view:
-    description: Allows viewing of applications
+  capplications.*:
+    description: Full access to all cApplications features
     default: op
-  apply.manage:
-    description: Allows managing (accept/deny) applications
-    default: op
-  apply.use:
-    description: Allows usage of apply commands
+    children:
+      capplications.use: true
+      capplications.apply.*: true
+      capplications.manage: true
+      capplications.admin: true
+
+  capplications.use:
+    description: Basic plugin usage
     default: true
+
+  capplications.apply.*:
+    description: Apply for any role
+    default: true
+    children:
+      capplications.apply.moderator: true
+      capplications.apply.builder: true
+      capplications.apply.developer: true
+      capplications.apply.event_manager: true
+
+  capplications.apply.moderator:
+    description: Apply for moderator role
+    default: true
+
+  capplications.apply.builder:
+    description: Apply for builder role
+    default: true
+
+  capplications.apply.developer:
+    description: Apply for developer role
+    default: true
+
+  capplications.apply.event_manager:
+    description: Apply for event manager role
+    default: true
+
+  capplications.manage:
+    description: Manage applications (accept/deny)
+    default: op
+
+  capplications.admin:
+    description: Administrative commands
+    default: op

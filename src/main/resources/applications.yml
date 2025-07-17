@@ -1,0 +1,64 @@
+applications:
+  moderator:
+    display_name: '&b&lModerator'
+    description: 'Help maintain order and assist players'
+    icon: 'IRON_SWORD'
+    requirements:
+      - 'permission:capplications.apply.moderator'
+      - 'Must have clean punishment history'
+      - 'Minimum 2 weeks on the server'
+    questions:
+      - '&eWhat is your in-game username? &7[Bot-Proof]'
+      - '&eHow old are you?'
+      - '&eWhat timezone are you in?'
+      - '&eWhy do you want to become a moderator?'
+      - '&eHow would you handle a player breaking the rules?'
+      - '&eHow many hours per week can you dedicate to moderating?'
+      - '&eDo you have any previous moderation experience?'
+
+  builder:
+    display_name: '&a&lBuilder'
+    description: 'Create amazing structures for the server'
+    icon: 'BRICKS'
+    requirements:
+      - 'permission:capplications.apply.builder'
+      - 'Portfolio of previous builds required'
+    questions:
+      - '&eWhat is your in-game username? &7[Bot-Proof]'
+      - '&eWhat is your building experience?'
+      - '&eAre you familiar with WorldEdit and VoxelSniper?'
+      - '&eHow many hours per week can you dedicate to building?'
+      - '&eHave you been a builder on other servers?'
+      - '&eCan you provide screenshots of your builds? &7[Imgur links preferred]'
+      - '&eWhat building style are you most comfortable with?'
+
+  developer:
+    display_name: '&d&lDeveloper'
+    description: 'Help develop and maintain server plugins'
+    icon: 'COMMAND_BLOCK'
+    requirements:
+      - 'permission:capplications.apply.developer'
+      - 'Programming experience required'
+      - 'Portfolio or GitHub profile required'
+    questions:
+      - '&eWhat is your in-game username? &7[Bot-Proof]'
+      - '&eWhat programming languages do you know?'
+      - '&eHow much experience do you have with Bukkit/Spigot development?'
+      - '&eCan you provide examples of your previous work?'
+      - '&eHow many hours per week can you dedicate to development?'
+      - '&eWhat development tools and IDEs are you familiar with?'
+
+  event_manager:
+    display_name: '&6&lEvent Manager'
+    description: 'Organize and run server events'
+    icon: 'FIREWORK_ROCKET'
+    requirements:
+      - 'permission:capplications.apply.events'
+      - 'Creative and organizational skills'
+    questions:
+      - '&eWhat is your in-game username? &7[Bot-Proof]'
+      - '&eWhat timezone are you in?'
+      - '&eWhat types of events would you like to organize?'
+      - '&eHow would you promote events to get player participation?'
+      - '&eDo you have experience organizing events or activities?'
+      - '&eHow often would you be able to host events?'
