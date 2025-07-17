@@ -1,9 +1,14 @@
 package io.github.anonventions.applydcu;
 
+import io.github.anonventions.applydcu.api.ApplicationService;
+import io.github.anonventions.applydcu.api.ConfigurationService;
 import io.github.anonventions.applydcu.commands.ApplyCommand;
 import io.github.anonventions.applydcu.commands.ApplyTabCompleter;
+import io.github.anonventions.applydcu.config.EnhancedConfigurationService;
+import io.github.anonventions.applydcu.core.ServiceRegistry;
 import io.github.anonventions.applydcu.events.InventoryClickListener;
 import io.github.anonventions.applydcu.events.PlayerChatListener;
+import io.github.anonventions.applydcu.services.EnhancedApplicationService;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
@@ -19,6 +24,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
@@ -29,12 +36,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * ApplyDCU v2.0 - Modern service-based architecture with async operations
+ */
 public class ApplyDCU extends JavaPlugin {
+    private static final Logger logger = LoggerFactory.getLogger(ApplyDCU.class);
     private static ApplyDCU instance;
+    
+    // Legacy fields for backward compatibility
     private FileConfiguration config;
     private Map<UUID, Integer> playerQuestionIndex;
     private Map<UUID, List<String>> playerAnswers;
-    private Map<UUID, UUID> pendingDenials; // New field
+    private Map<UUID, UUID> pendingDenials;
+    
+    // Service registry
+    private ServiceRegistry serviceRegistry;
 
     public static ApplyDCU getInstance() {
         return instance;
@@ -43,11 +59,127 @@ public class ApplyDCU extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        saveDefaultConfig();
-        config = getConfig();
-        createApplicationsFolder();
+        
+        try {
+            // Initialize service registry
+            serviceRegistry = ServiceRegistry.getInstance();
+            
+            // Initialize configuration
+            saveDefaultConfig();
+            config = getConfig();
+            
+            // Register services
+            registerServices();
+            
+            // Validate configuration
+            ConfigurationService configService = serviceRegistry.getService(ConfigurationService.class);
+            configService.validateConfiguration().thenAccept(valid -> {
+                if (!valid) {
+                    logger.warn("Configuration validation failed, some features may not work correctly");
+                }
+            });
+            
+            createApplicationsFolder();
+            ensureDefaultTitles();
 
-        // Ensure default titles are set in config
+            // Initialize legacy maps for backward compatibility
+            playerQuestionIndex = new HashMap<>();
+            playerAnswers = new HashMap<>();
+            pendingDenials = new HashMap<>();
+
+            // Register commands and events
+            ApplyCommand applyCommand = new ApplyCommand(this);
+            this.getCommand("apply").setExecutor(applyCommand);
+            this.getCommand("apply").setTabCompleter(new ApplyTabCompleter(this));
+
+            Bukkit.getPluginManager().registerEvents(new InventoryClickListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this), this);
+
+            // Start maintenance tasks
+            startMaintenanceTasks();
+            
+            logger.info("ApplyDCU v2.0 enabled successfully with modern architecture");
+            
+        } catch (Exception e) {
+            logger.error("Failed to enable ApplyDCU v2.0", e);
+            getServer().getPluginManager().disablePlugin(this);
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        try {
+            // Cleanup services
+            if (serviceRegistry != null) {
+                serviceRegistry.clear();
+            }
+            logger.info("ApplyDCU v2.0 disabled successfully");
+        } catch (Exception e) {
+            logger.error("Error during plugin disable", e);
+        }
+    }
+    
+    /**
+     * Register all services in the service registry
+     */
+    private void registerServices() {
+        // Configuration service
+        EnhancedConfigurationService configService = new EnhancedConfigurationService(getDataFolder());
+        serviceRegistry.registerService(ConfigurationService.class, configService);
+        
+        // Application service
+        EnhancedApplicationService applicationService = new EnhancedApplicationService(getDataFolder());
+        serviceRegistry.registerService(ApplicationService.class, applicationService);
+        
+        logger.info("Services registered successfully");
+    }
+    
+    /**
+     * Start maintenance tasks
+     */
+    private void startMaintenanceTasks() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    checkExpiredApplications();
+                    checkInactivePlayers();
+                } catch (Exception e) {
+                    logger.error("Error during maintenance task", e);
+                }
+            }
+        }.runTaskTimer(this, 0, 20 * 60 * 60 * 24); // Run every 24 hours
+    }
+
+    public void reloadPlugin(CommandSender sender) {
+        try {
+            reloadConfig();
+            config = getConfig();
+            
+            // Reload configuration service
+            ConfigurationService configService = serviceRegistry.getService(ConfigurationService.class);
+            configService.reloadConfiguration().thenRun(() -> {
+                sender.sendMessage(ChatColor.GREEN + "ApplyDCU v2.0 reloaded successfully.");
+            }).exceptionally(throwable -> {
+                sender.sendMessage(ChatColor.RED + "Failed to reload configuration: " + throwable.getMessage());
+                logger.error("Configuration reload failed", throwable);
+                return null;
+            });
+            
+        } catch (Exception e) {
+            sender.sendMessage(ChatColor.RED + "Failed to reload plugin: " + e.getMessage());
+            logger.error("Plugin reload failed", e);
+        }
+    }
+    
+    /**
+     * Get service registry for accessing services
+     */
+    public ServiceRegistry getServiceRegistry() {
+        return serviceRegistry;
+    }
+
+    private void ensureDefaultTitles() {
         if (!config.contains("gui.titles.applications")) {
             config.set("gui.titles.applications", "Applications");
         }
@@ -55,35 +187,6 @@ public class ApplyDCU extends JavaPlugin {
             config.set("gui.titles.manage", "Manage Application");
         }
         saveConfig();
-
-        playerQuestionIndex = new HashMap<>();
-        playerAnswers = new HashMap<>();
-        pendingDenials = new HashMap<>(); // Initialize the map
-
-        ApplyCommand applyCommand = new ApplyCommand(this);
-        this.getCommand("apply").setExecutor(applyCommand);
-        this.getCommand("apply").setTabCompleter(new ApplyTabCompleter(this));
-
-        Bukkit.getPluginManager().registerEvents(new InventoryClickListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this), this);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                checkExpiredApplications();
-                checkInactivePlayers();  // Check for inactive players
-            }
-        }.runTaskTimer(this, 0, 20 * 60 * 60 * 24); // Run every 24 hours
-    }
-
-    @Override
-    public void onDisable() {
-    }
-
-    public void reloadPlugin(CommandSender sender) {
-        reloadConfig();
-        config = getConfig();
-        sender.sendMessage(ChatColor.GREEN + "The plugin has been reloaded.");
     }
 
     private void createApplicationsFolder() {
@@ -93,6 +196,7 @@ public class ApplyDCU extends JavaPlugin {
         }
     }
 
+    // Legacy methods for backward compatibility
     public File getApplicationFile(UUID playerId) {
         return new File(getDataFolder() + "/applications", playerId.toString() + ".yml");
     }
@@ -114,7 +218,7 @@ public class ApplyDCU extends JavaPlugin {
         try {
             applicationConfig.save(getApplicationFile(playerId));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to save application", e);
         }
     }
 
@@ -139,7 +243,7 @@ public class ApplyDCU extends JavaPlugin {
                 Object obj = parser.parse(reader);
                 applications = (JSONArray) obj;
             } catch (IOException | ParseException e) {
-                e.printStackTrace();
+                logger.error("Failed to read player status", e);
             }
         }
 
@@ -165,7 +269,7 @@ public class ApplyDCU extends JavaPlugin {
         try (FileWriter writer = new FileWriter(statusFile)) {
             writer.write(applications.toJSONString());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to write player status", e);
         }
     }
 
@@ -177,7 +281,7 @@ public class ApplyDCU extends JavaPlugin {
                 Object obj = parser.parse(reader);
                 return (JSONArray) obj;
             } catch (IOException | ParseException e) {
-                e.printStackTrace();
+                logger.error("Failed to load player status", e);
             }
         }
         return new JSONArray();
@@ -241,7 +345,7 @@ public class ApplyDCU extends JavaPlugin {
                 try (FileWriter writer = new FileWriter(getPlayerStatusFile(playerId))) {
                     writer.write(playerStatus.toJSONString());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("Failed to save updated player status", e);
                 }
             }
         }
