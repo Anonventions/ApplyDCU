@@ -1,4 +1,4 @@
-# ApplyDCU - Minecraft Application System Plugin
+# cApplications - Minecraft Application System Plugin
 
 ![Loadscreens Banner](https://img.shields.io/badge/ApplyDCU-v1.0%20Beta-blue?style=for-the-badge)
 ![Minecraft Version](https://img.shields.io/badge/Minecraft-1.20+-green?style=for-the-badge)
