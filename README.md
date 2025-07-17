@@ -125,7 +125,7 @@ plugins/ApplyDCU/
 
 - **Issues**: [GitHub Issues](../../issues)
 - **Documentation**: [Wiki](../../wiki)
-- **Discord**: [Add your Discord server]
+- **Discord**: [[Link](https://discord.gg/SG8jvb9WU5)]
 
 ## 📜 License
 
